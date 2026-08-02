@@ -120,15 +120,21 @@ const tLoadError = i18n(I18nKey.videoLoadError);
 			window.dispatchEvent(new CustomEvent("bg-player-state-change", { detail: { playing: isPlaying } }));
 		}
 
+		function markPlaying() {
+			isPlaying = true;
+			errorCount = 0;
+			if (overlay) { overlay.classList.remove("opacity-0"); overlay.classList.add("opacity-100"); }
+			syncAttr();
+		}
+
 		function doPlay() {
-			video.src = urlList[currentIndex];
+			var targetUrl = new URL(urlList[currentIndex], window.location.href).href;
+			if (video.src !== targetUrl) video.src = targetUrl;
 			video.muted = true;
+			video.defaultMuted = true;
+			video.playsInline = true;
 			video.play()
-				.then(function () {
-					if (!isPlaying) return;
-					if (overlay) { overlay.classList.remove("opacity-0"); overlay.classList.add("opacity-100"); }
-					syncAttr();
-				})
+				.then(markPlaying)
 				.catch(function () {
 					isPlaying = false;
 					if (overlay) { overlay.classList.remove("opacity-100"); overlay.classList.add("opacity-0"); }
@@ -190,8 +196,14 @@ const tLoadError = i18n(I18nKey.videoLoadError);
 		window.addEventListener("bg-player-toggle", toggle);
 		video.addEventListener("ended", onEnded);
 		video.addEventListener("error", onError);
-		// 播放成功时重置错误计数
-		video.addEventListener("playing", function () { errorCount = 0; });
+		// 视频真正开始播放后再覆盖静态背景；iOS 页面恢复可见时自动重试
+		video.addEventListener("playing", markPlaying);
+		video.addEventListener("loadeddata", doPlay, { once: true });
+		video.addEventListener("canplay", doPlay, { once: true });
+		window.addEventListener("pageshow", doPlay);
+		document.addEventListener("visibilitychange", function () {
+			if (!document.hidden) doPlay();
+		});
 		if (prevBtn) prevBtn.addEventListener("click", function () { switchTrack(prevIndex()); });
 		if (nextBtn) nextBtn.addEventListener("click", function () { switchTrack(pickIndex(currentIndex)); });
 
