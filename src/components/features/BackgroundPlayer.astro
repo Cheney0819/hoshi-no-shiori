@@ -27,7 +27,7 @@ const tLoadError = i18n(I18nKey.videoLoadError);
 				id="bg-player-overlay"
 				class="absolute inset-0 z-15 overflow-hidden pointer-events-none transition-opacity duration-500 ease-in-out opacity-0"
 			>
-				<video id="bg-player-video" preload="auto" playsinline muted loop={!hasMultiple} class="size-full object-cover" style="filter: brightness(0.78)"></video>
+				<video id="bg-player-video" src={urls[0]} autoplay preload="auto" playsinline muted loop={!hasMultiple} class="size-full object-cover" style="filter: brightness(0.78)"></video>
 			</div>
 
 			<div id="bg-player-controls" class="absolute bottom-4 left-4 z-30 flex items-center gap-1.5 group">
@@ -82,9 +82,7 @@ const tLoadError = i18n(I18nKey.videoLoadError);
 		if (video.getAttribute("data-player-init")) return;
 		video.setAttribute("data-player-init", "true");
 
-		var prefersReducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
-		var saveDataEnabled = Boolean(Reflect.get(navigator, "connection")?.saveData);
-		var isPlaying = !prefersReducedMotion && !saveDataEnabled;
+		var isPlaying = true;
 		var currentIndex = 0;
 		var errorCount = 0;
 		var toastTimer = null;
@@ -153,7 +151,7 @@ const tLoadError = i18n(I18nKey.videoLoadError);
 			isPlaying = !isPlaying;
 			if (isPlaying) {
 				if (currentIndex >= urlList.length) currentIndex = 0;
-				requestAnimationFrame(function () { doPlay(); });
+				doPlay();
 			} else {
 				video.pause();
 				if (overlay) { overlay.classList.remove("opacity-100"); overlay.classList.add("opacity-0"); }
@@ -207,10 +205,10 @@ const tLoadError = i18n(I18nKey.videoLoadError);
 			}
 		});
 
-		// 默认自动播放；减少动态效果或省流模式下保留图片背景
+		// 默认静音自动播放并循环
 		video.loop = !isMultiple;
 		if (isPlaying) {
-			requestAnimationFrame(function () { doPlay(); });
+			doPlay();
 		} else {
 			if (overlay) { overlay.classList.remove("opacity-100"); overlay.classList.add("opacity-0"); }
 			video.src = urlList[currentIndex];
