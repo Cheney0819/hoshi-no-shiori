@@ -43,6 +43,11 @@ jobs:
           BASE_PATH: /${{ github.event.repository.name }}
         run: pnpm run build
 
+      - name: Validate project-subpath links
+        env:
+          BASE_PATH: /${{ github.event.repository.name }}
+        run: pnpm run check:base-path
+
       - name: Create .nojekyll file
         run: touch dist/.nojekyll
       
