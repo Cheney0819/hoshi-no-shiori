@@ -2,6 +2,7 @@
 import { Icon } from "astro-icon/components";
 import I18nKey from "@/i18n/i18nKey";
 import { i18n } from "@/i18n/translation";
+import { url } from "@/utils/url-utils";
 
 export interface Props {
 	playerUrl: string | string[];
@@ -10,7 +11,7 @@ export interface Props {
 
 const { playerUrl, playerMode = "order" } = Astro.props;
 
-const urls = Array.isArray(playerUrl) ? playerUrl : [playerUrl];
+const urls = (Array.isArray(playerUrl) ? playerUrl : [playerUrl]).map(url);
 const hasMultiple = urls.length > 1;
 const urlsJson = JSON.stringify(urls);
 
@@ -26,7 +27,7 @@ const tLoadError = i18n(I18nKey.videoLoadError);
 				id="bg-player-overlay"
 				class="absolute inset-0 z-15 overflow-hidden pointer-events-none transition-opacity duration-500 ease-in-out opacity-0"
 			>
-				<video id="bg-player-video" preload="auto" playsinline class="size-full object-cover"></video>
+				<video id="bg-player-video" preload="auto" playsinline muted loop={!hasMultiple} class="size-full object-cover" style="filter: brightness(0.78)"></video>
 			</div>
 
 			<div id="bg-player-controls" class="absolute bottom-4 left-4 z-30 flex items-center gap-1.5 group">
@@ -81,7 +82,9 @@ const tLoadError = i18n(I18nKey.videoLoadError);
 		if (video.getAttribute("data-player-init")) return;
 		video.setAttribute("data-player-init", "true");
 
-		var isPlaying = false;
+		var prefersReducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+		var saveDataEnabled = Boolean(Reflect.get(navigator, "connection")?.saveData);
+		var isPlaying = !prefersReducedMotion && !saveDataEnabled;
 		var currentIndex = 0;
 		var errorCount = 0;
 		var toastTimer = null;
@@ -123,8 +126,16 @@ const tLoadError = i18n(I18nKey.videoLoadError);
 			video.src = urlList[currentIndex];
 			video.muted = true;
 			video.play()
-				.then(function () { setTimeout(function () { if (video) video.muted = false; }, 100); })
-				.catch(function () { isPlaying = false; syncAttr(); });
+				.then(function () {
+					if (!isPlaying) return;
+					if (overlay) { overlay.classList.remove("opacity-0"); overlay.classList.add("opacity-100"); }
+					syncAttr();
+				})
+				.catch(function () {
+					isPlaying = false;
+					if (overlay) { overlay.classList.remove("opacity-100"); overlay.classList.add("opacity-0"); }
+					syncAttr();
+				});
 		}
 
 		function switchTrack(index) {
@@ -142,8 +153,6 @@ const tLoadError = i18n(I18nKey.videoLoadError);
 			isPlaying = !isPlaying;
 			if (isPlaying) {
 				if (currentIndex >= urlList.length) currentIndex = 0;
-				syncAttr();
-				if (overlay) { overlay.classList.remove("opacity-0"); overlay.classList.add("opacity-100"); }
 				requestAnimationFrame(function () { doPlay(); });
 			} else {
 				video.pause();
@@ -198,6 +207,17 @@ const tLoadError = i18n(I18nKey.videoLoadError);
 			}
 		});
 
+		// 默认自动播放；减少动态效果或省流模式下保留图片背景
+		video.loop = !isMultiple;
+		if (isPlaying) {
+			requestAnimationFrame(function () { doPlay(); });
+		} else {
+			if (overlay) { overlay.classList.remove("opacity-100"); overlay.classList.add("opacity-0"); }
+			video.src = urlList[currentIndex];
+			video.load();
+			syncAttr();
+		}
+
 		// 动态控制 prev/next 按钮显示
 		if (!isMultiple) {
 			if (prevBtn) prevBtn.style.display = "none";
@@ -218,7 +238,6 @@ const tLoadError = i18n(I18nKey.videoLoadError);
 <style>
 	:global([data-bg-video-playing] #banner-images-container),
 	:global([data-bg-video-playing] #banner-dim-container),
-	:global([data-bg-video-playing] #banner-overlay-container),
 	:global([data-bg-video-playing] #header-waves),
 	:global([data-bg-video-playing] #wallpaper-gradient) {
 		opacity: 0 !important;
