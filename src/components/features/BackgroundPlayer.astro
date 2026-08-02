@@ -9,6 +9,7 @@ export interface Props {
 const { playerUrl } = Astro.props;
 const configuredUrl = Array.isArray(playerUrl) ? playerUrl[0] : playerUrl;
 const sourceUrl = configuredUrl ? url(configuredUrl) : "";
+const mobileAnimationUrl = url("/assets/videos/hoshi-banner-mobile.webp");
 ---
 
 {
@@ -18,23 +19,32 @@ const sourceUrl = configuredUrl ? url(configuredUrl) : "";
 			class="absolute inset-0 z-15 overflow-hidden pointer-events-none select-none"
 			aria-hidden="true"
 		>
+			<img
+				id="bg-player-mobile-animation"
+				src={mobileAnimationUrl}
+				alt=""
+				aria-hidden="true"
+				class="absolute inset-0 size-full object-cover pointer-events-none select-none md:hidden"
+				style="filter: brightness(0.78); pointer-events: none; touch-action: none;"
+			/>
 			<video
 				id="bg-player-video"
-				src={sourceUrl}
 				autoplay
 				muted
 				loop
 				playsinline
-				preload="auto"
+				preload="metadata"
 				disablepictureinpicture
 				disableRemotePlayback
 				tabindex="-1"
 				aria-hidden="true"
-				class="size-full object-cover pointer-events-none select-none"
+				class="hidden size-full object-cover pointer-events-none select-none md:block"
 				style="filter: brightness(0.78); pointer-events: none; touch-action: none; user-select: none; -webkit-user-select: none; -webkit-touch-callout: none;"
 				x-webkit-airplay="deny"
 				webkit-playsinline="true"
-			></video>
+			>
+				<source src={sourceUrl} type="video/mp4" media="(min-width: 768px)" />
+			</video>
 		</div>
 	)
 }
@@ -42,6 +52,7 @@ const sourceUrl = configuredUrl ? url(configuredUrl) : "";
 <script is:inline>
 	(() => {
 		var video = document.getElementById("bg-player-video");
+		if (window.matchMedia("(max-width: 767px)").matches) return;
 		if (!video || video.getAttribute("data-background-video-init")) return;
 		video.setAttribute("data-background-video-init", "true");
 
