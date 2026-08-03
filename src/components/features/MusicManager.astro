@@ -543,7 +543,7 @@ const managerConfigStr = JSON.stringify({
     // Safari / iOS / WebView 禁止有声媒体在无手势时自动播放。
     // 自动播放被拦截后，用户第一次触摸、点击或按键时立即解锁播放，
     // 无需再专门点击悬浮提示中的“播放”按钮。
-    var unlockEvents = ['pointerdown', 'touchend', 'keydown'];
+    var unlockEvents = ['pointerdown', 'touchend', 'click', 'keydown'];
     function removeAutoUnlockListeners() {
         unlockEvents.forEach(function (name) {
             document.removeEventListener(name, handleFirstInteraction, true);
