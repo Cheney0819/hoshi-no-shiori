@@ -65,7 +65,7 @@ const managerConfigStr = JSON.stringify({
 >
 	<div class="flex-1 min-w-0">
 		<div class="font-bold text-sm">🎵 开启背景音乐</div>
-		<div class="text-xs text-neutral-500 dark:text-neutral-400 truncate">{localPlaylist[0]?.name ?? "背景音乐"} · 点击后将在网页内列表循环播放</div>
+		<div class="text-xs text-neutral-500 dark:text-neutral-400 truncate">{localPlaylist[0]?.name ?? "背景音乐"} · 首次触摸页面后自动播放</div>
 	</div>
 	<button id="music-autoplay-enable" class="btn-regular shrink-0 rounded-lg px-3 py-2 text-sm font-bold">播放</button>
 	<button id="music-autoplay-dismiss" class="shrink-0 rounded-lg px-2 py-2 text-neutral-400 hover:text-neutral-700 dark:hover:text-neutral-100" aria-label="暂不播放">✕</button>
@@ -137,7 +137,7 @@ const managerConfigStr = JSON.stringify({
         playlist: [],
         currentIndex: 0,
         isPlaying: false,
-        userPaused: localStorage.getItem('music-player-paused') === 'true',
+        userPaused: false,
         playMode: 0, // 0: list, 1: one, 2: random
         volume: localStorage.getItem('music-player-volume') !== null
             ? parseFloat(localStorage.getItem('music-player-volume'))
@@ -303,12 +303,11 @@ const managerConfigStr = JSON.stringify({
     // ── Playback controls ────────────────────────────────────
     function togglePlay() {
         if (!state.isPlaying) {
-            playFromUserGesture();
+            playFromUserGesture(false);
         } else {
             audio.pause();
             state.isPlaying = false;
             state.userPaused = true;
-            localStorage.setItem('music-player-paused', 'true');
             hideAutoplayPrompt();
             emit('fm:play-state', { isPlaying: false });
         }
@@ -382,7 +381,7 @@ const managerConfigStr = JSON.stringify({
         }
     }
 
-    function playFromUserGesture() {
+    function playFromUserGesture(forceReload) {
         if (!state.playlist.length) return;
         state.userPaused = false;
         localStorage.removeItem('music-player-paused');
@@ -392,9 +391,11 @@ const managerConfigStr = JSON.stringify({
         }
 
         // iOS/WebView 中自动播放失败后，旧的 play() 可能一直处于 pending。
-        // 在用户手势内重新 load 并 play，避免“点击播放却没有声音”。
+        // 第一次用户手势时强制重新 load；普通暂停恢复则保留播放进度。
         audio.preload = 'auto';
-        audio.load();
+        if (forceReload || audio.networkState === 3 || audio.readyState === 0) {
+            audio.load();
+        }
         hideAutoplayPrompt();
         var promise = audio.play();
         if (promise && typeof promise.then === 'function') {
@@ -416,6 +417,7 @@ const managerConfigStr = JSON.stringify({
         state.userPaused = false;
         state.error = null;
         localStorage.removeItem('music-player-paused');
+        removeAutoUnlockListeners();
         hideAutoplayPrompt();
         emit('fm:play-state', { isPlaying: true });
     });
@@ -534,15 +536,35 @@ const managerConfigStr = JSON.stringify({
 
     if (autoplayEnable) {
         autoplayEnable.addEventListener('click', function () {
-            playFromUserGesture();
+            playFromUserGesture(true);
         });
     }
+
+    // Safari / iOS / WebView 禁止有声媒体在无手势时自动播放。
+    // 自动播放被拦截后，用户第一次触摸、点击或按键时立即解锁播放，
+    // 无需再专门点击悬浮提示中的“播放”按钮。
+    var unlockEvents = ['pointerdown', 'touchend', 'keydown'];
+    function removeAutoUnlockListeners() {
+        unlockEvents.forEach(function (name) {
+            document.removeEventListener(name, handleFirstInteraction, true);
+        });
+    }
+    function handleFirstInteraction(event) {
+        var target = event.target;
+        if (target && target.closest && target.closest('#music-autoplay-dismiss')) return;
+        if (!config.autoPlay || state.userPaused || state.isPlaying || !state.initialized) return;
+        removeAutoUnlockListeners();
+        playFromUserGesture(true);
+    }
+    unlockEvents.forEach(function (name) {
+        document.addEventListener(name, handleFirstInteraction, true);
+    });
 
     if (autoplayDismiss) {
         autoplayDismiss.addEventListener('click', function () {
             state.userPaused = true;
             state.isPlaying = false;
-            localStorage.setItem('music-player-paused', 'true');
+            removeAutoUnlockListeners();
             audio.pause();
             hideAutoplayPrompt();
             emit('fm:play-state', { isPlaying: false });
