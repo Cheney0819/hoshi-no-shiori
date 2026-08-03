@@ -49,6 +49,8 @@ export const backgroundWallpaper: BackgroundWallpaperConfig = {
 		playerUrl: [
 			"/assets/videos/hoshi-banner.mp4",
 			"/assets/videos/hoshi-banner-2.mp4",
+			"/assets/videos/hoshi-banner-3.mp4",
+			"/assets/videos/hoshi-banner-4.mp4",
 		],
 	},
 	// 横幅壁纸和全屏壁纸共享配置

@@ -10,10 +10,34 @@ const { playerUrl, playerMode = "order" } = Astro.props;
 const sourceUrls = (Array.isArray(playerUrl) ? playerUrl : [playerUrl])
 	.filter(Boolean)
 	.map(url);
-const mobileAnimationUrls = [
-	url("/assets/videos/hoshi-banner-mobile-hq.webp"),
-	url("/assets/videos/hoshi-banner-mobile-2-hq.webp"),
-].slice(0, sourceUrls.length);
+const mobileMedia = [
+	{
+		url: url("/assets/videos/hoshi-banner-mobile-hq.webp"),
+		kind: "image",
+		duration: 20583,
+		poster: "",
+	},
+	{
+		url: url("/assets/videos/hoshi-banner-mobile-2-hq.webp"),
+		kind: "image",
+		duration: 20367,
+		poster: "",
+	},
+	{
+		url: sourceUrls[2] ?? "",
+		kind: "video",
+		duration: 4400,
+		poster: url("/assets/videos/hoshi-banner-mobile-3-poster.png"),
+	},
+	{
+		url: sourceUrls[3] ?? "",
+		kind: "video",
+		duration: 5500,
+		poster: url("/assets/videos/hoshi-banner-mobile-4-poster.png"),
+	},
+]
+	.filter((item) => item.url)
+	.slice(0, sourceUrls.length);
 const hasMultiple = sourceUrls.length > 1;
 ---
 
@@ -29,28 +53,52 @@ const hasMultiple = sourceUrls.length > 1;
 				class="absolute inset-0 block size-full pointer-events-none select-none md:hidden"
 				aria-hidden="true"
 			>
-				{mobileAnimationUrls.map((animationUrl, index) => (
-					<picture
+				{mobileMedia.map((media, index) => (
+					<div
 						class:list={[
 							"mobile-bg-slide absolute inset-0 block size-full transition-opacity duration-1000",
 							index === 0 ? "opacity-100" : "opacity-0",
 						]}
 						data-slide-index={index}
+						data-kind={media.kind}
+						data-duration={media.duration}
 					>
-						<source
-							srcset={index === 0 ? animationUrl : undefined}
-							data-srcset={animationUrl}
-							type="image/webp"
-							media="(max-width: 767px)"
-						/>
-						<img
-							src="data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///ywAAAAAAQABAAACAUwAOw=="
-							alt=""
-							aria-hidden="true"
-							class="size-full object-cover pointer-events-none select-none"
-							style="filter: brightness(0.78); pointer-events: none; touch-action: none;"
-						/>
-					</picture>
+						{media.kind === "image" ? (
+							<picture class="block size-full">
+								<source
+									srcset={index === 0 ? media.url : undefined}
+									data-srcset={media.url}
+									type="image/webp"
+									media="(max-width: 767px)"
+								/>
+								<img
+									src="data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///ywAAAAAAQABAAACAUwAOw=="
+									alt=""
+									aria-hidden="true"
+									class="size-full object-cover pointer-events-none select-none"
+									style="filter: brightness(0.78); pointer-events: none; touch-action: none;"
+								/>
+							</picture>
+						) : (
+							<video
+								muted
+								loop
+								playsinline
+								preload="metadata"
+								poster={media.poster}
+								disablepictureinpicture
+								disableRemotePlayback
+								tabindex="-1"
+								aria-hidden="true"
+								class="mobile-bg-video size-full object-cover pointer-events-none select-none"
+								style="filter: brightness(0.78); pointer-events: none; touch-action: none; user-select: none; -webkit-user-select: none; -webkit-touch-callout: none;"
+								x-webkit-airplay="deny"
+								webkit-playsinline="true"
+							>
+								<source data-src={media.url} type="video/mp4" />
+							</video>
+						)}
+					</div>
 				))}
 			</div>
 
@@ -80,13 +128,11 @@ const hasMultiple = sourceUrls.length > 1;
 	is:inline
 	define:vars={{
 		desktopUrls: JSON.stringify(sourceUrls),
-		mobileUrls: JSON.stringify(mobileAnimationUrls),
 		playerMode,
 	}}
 >
 	(() => {
 		var desktopList = JSON.parse(desktopUrls);
-		var mobileList = JSON.parse(mobileUrls);
 		var isMobile = window.matchMedia("(max-width: 767px)").matches;
 
 		function nextIndex(current, length) {
@@ -106,28 +152,75 @@ const hasMultiple = sourceUrls.length > 1;
 			var slides = Array.from(carousel.querySelectorAll(".mobile-bg-slide"));
 			var currentSlide = 0;
 
+			function getSlideVideo(index) {
+				return slides[index] && slides[index].querySelector(".mobile-bg-video");
+			}
+
 			function loadSlide(index) {
-				var source = slides[index] && slides[index].querySelector("source");
-				if (source && !source.getAttribute("srcset")) {
+				var slide = slides[index];
+				if (!slide) return;
+				var source = slide.querySelector("source");
+				if (!source) return;
+				if (slide.getAttribute("data-kind") === "video") {
+					if (!source.getAttribute("src")) {
+						source.setAttribute("src", source.getAttribute("data-src") || "");
+						var slideVideo = getSlideVideo(index);
+						if (slideVideo) slideVideo.load();
+					}
+				} else if (!source.getAttribute("srcset")) {
 					source.setAttribute("srcset", source.getAttribute("data-srcset") || "");
 				}
 			}
 
-			if (slides.length > 1) {
-				setTimeout(function () { loadSlide(nextIndex(currentSlide, slides.length)); }, 2000);
-				var oldTimer = Reflect.get(window, "__hoshiMobileCarouselTimer");
-				if (oldTimer) clearInterval(oldTimer);
-				var timer = setInterval(function () {
+			function playSlideVideo(index) {
+				var slideVideo = getSlideVideo(index);
+				if (!slideVideo) return;
+				slideVideo.muted = true;
+				slideVideo.defaultMuted = true;
+				slideVideo.autoplay = true;
+				slideVideo.loop = true;
+				slideVideo.playsInline = true;
+				slideVideo.controls = false;
+				try { slideVideo.currentTime = 0; } catch (_) {}
+				var promise = slideVideo.play();
+				if (promise && typeof promise.catch === "function") {
+					promise.catch(function () {});
+				}
+			}
+
+			function stopSlideVideo(index) {
+				var slideVideo = getSlideVideo(index);
+				if (slideVideo) slideVideo.pause();
+			}
+
+			function scheduleNext() {
+				if (slides.length <= 1) return;
+				var duration = Number(slides[currentSlide].getAttribute("data-duration")) || 20400;
+				var timer = setTimeout(function () {
 					var next = nextIndex(currentSlide, slides.length);
 					loadSlide(next);
+					stopSlideVideo(currentSlide);
 					slides[currentSlide].classList.remove("opacity-100");
 					slides[currentSlide].classList.add("opacity-0");
 					slides[next].classList.remove("opacity-0");
 					slides[next].classList.add("opacity-100");
 					currentSlide = next;
-				}, 20400);
+					playSlideVideo(currentSlide);
+					setTimeout(function () {
+						loadSlide(nextIndex(currentSlide, slides.length));
+					}, 1000);
+					scheduleNext();
+				}, duration);
 				Reflect.set(window, "__hoshiMobileCarouselTimer", timer);
 			}
+
+			var oldTimer = Reflect.get(window, "__hoshiMobileCarouselTimer");
+			if (oldTimer) clearTimeout(oldTimer);
+			loadSlide(0);
+			setTimeout(function () {
+				loadSlide(nextIndex(currentSlide, slides.length));
+			}, 2000);
+			scheduleNext();
 			return;
 		}
 
