@@ -12,7 +12,7 @@ export const siteConfig: SiteConfig = {
 	subtitle: "随心记录，自由分享",
 
 	// 站点 URL
-	site_url: "https://cheney0819.github.io/hoshi-no-shiori",
+	site_url: "https://junjiee.online",
 
 	// 站点描述
 	description:
