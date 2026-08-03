@@ -2,11 +2,14 @@
 title: 欢迎来到星之栞
 published: 2026-08-02
 pinned: true
-description: 为什么想做一个属于自己的二次元个人博客，以及这里接下来会出现什么。
-tags: [博客, 开始, 日常]
+description: Aster 为什么建立这个个人空间，以及星之栞会记录什么。
+tags: [博客, Aster, 记录]
 category: 生活记录
-image: ./images/firefly1.avif
-slug: hello-hoshi
+image: ../../assets/images/avatar-custom.webp
+slug: welcome
+author: Aster
+lang: zh_CN
+draft: false
 comment: false
 ---
 
@@ -20,12 +23,12 @@ comment: false
 
 主要会有三类内容：
 
-- 学习和开发过程中整理出的技术文章；
-- 看完动画、电影或玩完游戏之后的感想；
-- 关于生活、摄影和偶然灵感的碎片记录。
+- **动画随笔**：观后感、角色与场景带来的情绪；
+- **技术笔记**：开发过程中值得整理和反复查阅的内容；
+- **生活记录**：摄影、游戏、偶然灵感和普通日常。
 
 > 不追求每天更新，只希望每一次发布都值得被留下。
 
-## 下一步
+## 关于更新
 
-这里会继续增加真实文章、追番记录和项目内容。希望它能像一部连载作品一样慢慢成长。
+星之栞会按照自己的节奏慢慢成长。这里不追逐更新数量，更在意每一篇文字是否真实、清楚，以及未来重新读到时是否仍有意义。

@@ -27,6 +27,17 @@ pnpm check
 pnpm build
 ```
 
+## 内容创作
+
+```bash
+pnpm new-post "文章标题"
+```
+
+新文章默认以草稿状态创建。分类、标签、Slug 和发布检查请参考：
+
+- [内容规范](docs/CONTENT_GUIDE.md)
+- [文章模板](docs/POST_TEMPLATE.md)
+
 ## 主要配置
 
 - `src/config/siteConfig.ts`：站点名称、域名、主题和页面开关

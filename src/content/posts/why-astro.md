@@ -6,6 +6,9 @@ tags: [Astro, 前端, 博客]
 category: 技术笔记
 image: ./images/github.avif
 slug: why-astro
+author: Aster
+lang: zh_CN
+draft: false
 comment: false
 ---
 

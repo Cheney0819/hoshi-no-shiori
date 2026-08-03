@@ -6,6 +6,9 @@ tags: [动画, 夏天, 随笔]
 category: 动画随笔
 image: ./images/1.avif
 slug: anime-summer
+author: Aster
+lang: zh_CN
+draft: false
 comment: false
 ---
 

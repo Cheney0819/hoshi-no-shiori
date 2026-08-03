@@ -79,14 +79,28 @@ if (!fs.existsSync(dirPath)) {
 const content = `---
 title: ${args[0]}
 published: ${getDate()}
-description: ''
-image: ''
+description: ""
+image: ""
 tags: []
-category: ''
-draft: false
-lang: ''
+category: 生活记录
+draft: true
+lang: zh_CN
 slug: ${slug}
+author: Aster
+comment: false
 ---
+
+## 写在前面
+
+在这里简要说明文章的背景和想记录的内容。
+
+## 正文
+
+在这里开始正文。
+
+## 小结
+
+在这里总结文章，并记录后续可能继续补充的内容。
 `
 
 fs.writeFileSync(path.join(targetDir, fileName), content)
