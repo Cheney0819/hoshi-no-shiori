@@ -4,7 +4,7 @@ published: 2026-08-03
 description: 用一到两句话概括文章内容。
 image: ./images/cover.avif
 tags: [标签一, 标签二]
-category: 生活记录
+category: 随笔
 draft: true
 lang: zh_CN
 slug: article-slug

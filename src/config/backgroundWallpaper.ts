@@ -67,9 +67,9 @@ export const backgroundWallpaper: BackgroundWallpaperConfig = {
 			titleSize: "5rem",
 			// 主页横幅副标题
 			subtitle: [
-				"在动画、代码与日常之间，收藏每一个闪光的瞬间。",
-				"愿每一次记录，都成为未来回望时闪亮的星光。",
-				"今日もいい日になりますように。",
+				"记录所见、所想与所爱。",
+				"想到什么，就在这里写下什么。",
+				"愿每一次记录，都成为未来回望时的星光。",
 			],
 			// 主页横幅副标题字体大小
 			subtitleSize: "1.5rem",

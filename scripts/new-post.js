@@ -82,7 +82,7 @@ published: ${getDate()}
 description: ""
 image: ""
 tags: []
-category: 生活记录
+category: 随笔
 draft: true
 lang: zh_CN
 slug: ${slug}

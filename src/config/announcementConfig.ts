@@ -5,7 +5,7 @@ export const announcementConfig: AnnouncementConfig = {
 	title: "小站公告",
 
 	// 公告内容
-	content: "欢迎来到星之栞。这里会记录动画、技术和普通但值得收藏的日子。",
+	content: "欢迎来到星之栞。这里没有固定主题，只记录此刻想写下和分享的内容。",
 
 	// 是否允许用户关闭公告
 	closable: false,

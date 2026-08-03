@@ -12,7 +12,7 @@ export const profileConfig: ProfileConfig = {
 	name: "Aster",
 
 	// 个人签名
-	bio: "在动画与代码之间寻找灵感，喜欢可爱的事物，也记录生活里偶然闪光的瞬间。",
+	bio: "随心记录感兴趣的一切，也收藏生活里偶然闪光的瞬间。",
 
 	// 链接配置
 	// 已经预装的图标集：fa7-brands，fa7-regular，fa7-solid，material-symbols，simple-icons

@@ -9,17 +9,17 @@ export const siteConfig: SiteConfig = {
 	title: "星之栞",
 
 	// 站点副标题
-	subtitle: "动漫、技术与日常",
+	subtitle: "随心记录，自由分享",
 
 	// 站点 URL
 	site_url: "https://cheney0819.github.io/hoshi-no-shiori",
 
 	// 站点描述
 	description:
-		"星之栞是一个记录动画感想、技术探索与生活碎片的年轻化二次元个人博客。",
+		"星之栞是 Aster 的个人空间，用来记录想法、兴趣、经历，以及任何值得留下的瞬间。",
 
 	// 站点关键词
-	keywords: ["星之栞", "动漫", "二次元", "Astro", "个人博客", "技术", "生活"],
+	keywords: ["星之栞", "Aster", "个人博客", "随笔", "记录", "分享", "兴趣", "生活"],
 
 	// 主题色
 	themeColor: {
