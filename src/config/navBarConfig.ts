@@ -33,6 +33,9 @@ const getDynamicNavBarConfig = (): NavBarConfig => {
 		],
 	});
 
+	// 相册入口
+	links.push(LinkPresets.Gallery);
+
 	// 关于页面
 	links.push(LinkPresets.About);
 

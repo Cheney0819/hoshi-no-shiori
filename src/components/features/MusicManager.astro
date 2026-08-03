@@ -126,9 +126,9 @@ const managerConfigStr = JSON.stringify({
 
     // ── Audio element (persistent, attached to body) ────────
     var audio = document.createElement('audio');
-    audio.crossOrigin = 'anonymous';
     audio.style.display = 'none';
-    audio.preload = 'metadata';
+    audio.preload = 'auto';
+    audio.setAttribute('playsinline', '');
     document.body.appendChild(audio);
 
     // ── State ────────────────────────────────────────────────
@@ -240,6 +240,8 @@ const managerConfigStr = JSON.stringify({
         if (ver !== loadVersion) return;
         var playUrl = currentTrackUrls[currentTrackUrlIndex];
         audio.src = playUrl;
+        audio.preload = 'auto';
+        audio.load();
 
         if (autoPlay) {
             audio.play().then(function () {
@@ -300,18 +302,8 @@ const managerConfigStr = JSON.stringify({
 
     // ── Playback controls ────────────────────────────────────
     function togglePlay() {
-        if (audio.paused) {
-            audio.play().then(function () {
-                state.isPlaying = true;
-                state.userPaused = false;
-                localStorage.removeItem('music-player-paused');
-                hideAutoplayPrompt();
-                emit('fm:play-state', { isPlaying: true });
-            }).catch(function (e) {
-                if (e.name === 'AbortError') return;
-                console.warn('Playback failed:', e);
-                showAutoplayPrompt();
-            });
+        if (!state.isPlaying) {
+            playFromUserGesture();
         } else {
             audio.pause();
             state.isPlaying = false;
@@ -390,7 +382,49 @@ const managerConfigStr = JSON.stringify({
         }
     }
 
+    function playFromUserGesture() {
+        if (!state.playlist.length) return;
+        state.userPaused = false;
+        localStorage.removeItem('music-player-paused');
+
+        if (!audio.src) {
+            loadTrack(state.currentIndex, false);
+        }
+
+        // iOS/WebView 中自动播放失败后，旧的 play() 可能一直处于 pending。
+        // 在用户手势内重新 load 并 play，避免“点击播放却没有声音”。
+        audio.preload = 'auto';
+        audio.load();
+        hideAutoplayPrompt();
+        var promise = audio.play();
+        if (promise && typeof promise.then === 'function') {
+            promise.then(function () {
+                state.isPlaying = true;
+                state.error = null;
+                emit('fm:play-state', { isPlaying: true });
+            }).catch(function (e) {
+                if (e.name === 'AbortError') return;
+                console.warn('Playback failed after user gesture:', e);
+                showAutoplayPrompt();
+            });
+        }
+    }
+
     // ── Audio events → broadcast ─────────────────────────────
+    audio.addEventListener('playing', function () {
+        state.isPlaying = true;
+        state.userPaused = false;
+        state.error = null;
+        localStorage.removeItem('music-player-paused');
+        hideAutoplayPrompt();
+        emit('fm:play-state', { isPlaying: true });
+    });
+
+    audio.addEventListener('pause', function () {
+        state.isPlaying = false;
+        emit('fm:play-state', { isPlaying: false });
+    });
+
     audio.addEventListener('timeupdate', function () {
         if (isNaN(audio.duration)) return;
         var ct = audio.currentTime;
@@ -500,11 +534,7 @@ const managerConfigStr = JSON.stringify({
 
     if (autoplayEnable) {
         autoplayEnable.addEventListener('click', function () {
-            state.userPaused = false;
-            localStorage.removeItem('music-player-paused');
-            hideAutoplayPrompt();
-            if (audio.src) togglePlay();
-            else if (state.playlist.length > 0) loadTrack(state.currentIndex, true);
+            playFromUserGesture();
         });
     }
 

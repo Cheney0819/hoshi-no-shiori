@@ -9,6 +9,8 @@ export type SakuraWorkerInboundMessage =
 	| {
 			type: "init";
 			config: SakuraConfig;
+			/** 带站点 BASE_PATH 的樱花贴图地址 */
+			imageUrl: string;
 			/** 通过 transfer 转移给 Worker 的 OffscreenCanvas */
 			canvas: OffscreenCanvas;
 			width: number;
