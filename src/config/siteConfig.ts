@@ -46,12 +46,12 @@ export const siteConfig: SiteConfig = {
 	// 如果启用了OpenGraph图片功能，数组中需要包含png格式的favicon图标
 	favicon: [
 		{
-			// 图标文件路径
-			src: "/favicon/firefly-32.png",
-			// 可选，指定主题 'light' | 'dark'
-			// theme: "light",
-			// 可选，图标大小
-			// sizes: "32x32",
+			src: "/favicon/aster-32.png",
+			sizes: "32x32",
+		},
+		{
+			src: "/favicon/aster-192.png",
+			sizes: "192x192",
 		},
 	],
 
@@ -67,9 +67,9 @@ export const siteConfig: SiteConfig = {
 		// 例如: { type: "image", value: "assets/images/logo.png", valueDark: "assets/images/logo-dark.png", alt: "Logo" }
 		// 使用 Astro 图标库时不需要设置 valueDark，图标会自动跟随主题亮暗色切换
 		logo: {
-			type: "icon",
-			value: "material-symbols:star-rounded",
-			alt: "星之栞",
+			type: "image",
+			value: "/favicon/aster-192.png",
+			alt: "星之栞 · Aster",
 		},
 		// 导航栏标题
 		title: "星之栞",
