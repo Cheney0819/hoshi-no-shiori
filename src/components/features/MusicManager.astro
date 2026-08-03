@@ -33,6 +33,7 @@ const managerConfigStr = JSON.stringify({
 	meting: config.meting,
 	localPlaylist: localPlaylist,
 	volume: config.volume ?? 0.7,
+	autoPlay: config.autoPlay ?? false,
 	playMode: config.playMode ?? "list",
 	showLyrics: config.showLyrics ?? true,
 	i18n: {
@@ -56,12 +57,41 @@ const managerConfigStr = JSON.stringify({
 });
 ---
 
+<div
+	id="music-autoplay-prompt"
+	class="hidden fixed left-1/2 bottom-6 z-100 w-[min(92vw,26rem)] -translate-x-1/2 items-center gap-3 rounded-2xl border border-white/40 bg-white/90 px-4 py-3 text-neutral-800 shadow-xl backdrop-blur-xl dark:border-white/10 dark:bg-neutral-900/90 dark:text-neutral-100"
+	role="status"
+	aria-live="polite"
+>
+	<div class="flex-1 min-w-0">
+		<div class="font-bold text-sm">🎵 开启背景音乐</div>
+		<div class="text-xs text-neutral-500 dark:text-neutral-400 truncate">小小奇迹 · 点击后将在网页内循环播放</div>
+	</div>
+	<button id="music-autoplay-enable" class="btn-regular shrink-0 rounded-lg px-3 py-2 text-sm font-bold">播放</button>
+	<button id="music-autoplay-dismiss" class="shrink-0 rounded-lg px-2 py-2 text-neutral-400 hover:text-neutral-700 dark:hover:text-neutral-100" aria-label="暂不播放">✕</button>
+</div>
+
 <script is:inline data-swup-ignore-script define:vars={{ managerConfigStr }}>
 (function () {
     // Singleton guard – only create once
     if (window.__fireflyMusic) return;
 
     var config = JSON.parse(managerConfigStr);
+    var autoplayPrompt = document.getElementById('music-autoplay-prompt');
+    var autoplayEnable = document.getElementById('music-autoplay-enable');
+    var autoplayDismiss = document.getElementById('music-autoplay-dismiss');
+
+    function showAutoplayPrompt() {
+        if (!autoplayPrompt) return;
+        autoplayPrompt.classList.remove('hidden');
+        autoplayPrompt.classList.add('flex');
+    }
+
+    function hideAutoplayPrompt() {
+        if (!autoplayPrompt) return;
+        autoplayPrompt.classList.add('hidden');
+        autoplayPrompt.classList.remove('flex');
+    }
 
     // ── Helpers ──────────────────────────────────────────────
     function formatTime(seconds) {
@@ -98,9 +128,8 @@ const managerConfigStr = JSON.stringify({
     var audio = document.createElement('audio');
     audio.crossOrigin = 'anonymous';
     audio.style.display = 'none';
-    audio.preload = 'none'; // 阻止浏览器预加载和自动恢复播放
+    audio.preload = 'metadata';
     document.body.appendChild(audio);
-    audio.pause(); // 确保不自动播放
 
     // ── State ────────────────────────────────────────────────
     var loadVersion = 0; // incremented on each loadTrack to discard stale play() results
@@ -108,6 +137,7 @@ const managerConfigStr = JSON.stringify({
         playlist: [],
         currentIndex: 0,
         isPlaying: false,
+        userPaused: localStorage.getItem('music-player-paused') === 'true',
         playMode: 0, // 0: list, 1: one, 2: random
         volume: localStorage.getItem('music-player-volume') !== null
             ? parseFloat(localStorage.getItem('music-player-volume'))
@@ -215,12 +245,16 @@ const managerConfigStr = JSON.stringify({
             audio.play().then(function () {
                 if (ver !== loadVersion) return; // stale, discard
                 state.isPlaying = true;
+                state.userPaused = false;
                 state.error = null;
+                localStorage.removeItem('music-player-paused');
+                hideAutoplayPrompt();
                 emit('fm:play-state', { isPlaying: true });
             }).catch(function (e) {
                 if (ver !== loadVersion) return; // stale, discard
                 if (e.name === 'AbortError') return; // interrupted by new load
                 console.warn('Autoplay blocked:', e);
+                if (config.autoPlay && !state.userPaused) showAutoplayPrompt();
             });
         } else {
             state.isPlaying = false;
@@ -269,14 +303,21 @@ const managerConfigStr = JSON.stringify({
         if (audio.paused) {
             audio.play().then(function () {
                 state.isPlaying = true;
+                state.userPaused = false;
+                localStorage.removeItem('music-player-paused');
+                hideAutoplayPrompt();
                 emit('fm:play-state', { isPlaying: true });
             }).catch(function (e) {
                 if (e.name === 'AbortError') return;
                 console.warn('Playback failed:', e);
+                showAutoplayPrompt();
             });
         } else {
             audio.pause();
             state.isPlaying = false;
+            state.userPaused = true;
+            localStorage.setItem('music-player-paused', 'true');
+            hideAutoplayPrompt();
             emit('fm:play-state', { isPlaying: false });
         }
     }
@@ -431,7 +472,7 @@ const managerConfigStr = JSON.stringify({
                     isMuted: state.isMuted
                 });
 
-                loadTrack(startIndex, false);
+                loadTrack(startIndex, Boolean(config.autoPlay && !state.userPaused));
             } else {
                 state.initialized = true;
                 emit('fm:init', {
@@ -457,6 +498,27 @@ const managerConfigStr = JSON.stringify({
         }
     }
 
+    if (autoplayEnable) {
+        autoplayEnable.addEventListener('click', function () {
+            state.userPaused = false;
+            localStorage.removeItem('music-player-paused');
+            hideAutoplayPrompt();
+            if (audio.src) togglePlay();
+            else if (state.playlist.length > 0) loadTrack(state.currentIndex, true);
+        });
+    }
+
+    if (autoplayDismiss) {
+        autoplayDismiss.addEventListener('click', function () {
+            state.userPaused = true;
+            state.isPlaying = false;
+            localStorage.setItem('music-player-paused', 'true');
+            audio.pause();
+            hideAutoplayPrompt();
+            emit('fm:play-state', { isPlaying: false });
+        });
+    }
+
     // ── Public API ───────────────────────────────────────────
     window.__fireflyMusic = {
         init: init,
@@ -467,6 +529,7 @@ const managerConfigStr = JSON.stringify({
                 currentIndex: state.currentIndex,
                 track: track,
                 isPlaying: state.isPlaying,
+                userPaused: state.userPaused,
                 playMode: state.playMode,
                 volume: state.volume,
                 isMuted: state.isMuted,
