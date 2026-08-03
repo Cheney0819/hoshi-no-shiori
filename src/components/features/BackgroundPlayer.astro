@@ -19,14 +19,24 @@ const mobileAnimationUrl = url("/assets/videos/hoshi-banner-mobile-hd.webp");
 			class="absolute inset-0 z-15 overflow-hidden pointer-events-none select-none"
 			aria-hidden="true"
 		>
-			<img
+			<picture
 				id="bg-player-mobile-animation"
-				src={mobileAnimationUrl}
-				alt=""
+				class="absolute inset-0 block size-full pointer-events-none select-none md:hidden"
 				aria-hidden="true"
-				class="absolute inset-0 size-full object-cover pointer-events-none select-none md:hidden"
-				style="filter: brightness(0.78); pointer-events: none; touch-action: none;"
-			/>
+			>
+				<source
+					srcset={mobileAnimationUrl}
+					type="image/webp"
+					media="(max-width: 767px)"
+				/>
+				<img
+					src="data:image/gif;base64,R0lGODlhAQABAAD/ACwAAAAAAQABAAACADs="
+					alt=""
+					aria-hidden="true"
+					class="size-full object-cover pointer-events-none select-none"
+					style="filter: brightness(0.78); pointer-events: none; touch-action: none;"
+				/>
+			</picture>
 			<video
 				id="bg-player-video"
 				autoplay
