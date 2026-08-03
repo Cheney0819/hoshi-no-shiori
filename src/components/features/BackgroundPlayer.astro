@@ -6,42 +6,59 @@ export interface Props {
 	playerMode?: "order" | "random";
 }
 
-const { playerUrl } = Astro.props;
-const configuredUrl = Array.isArray(playerUrl) ? playerUrl[0] : playerUrl;
-const sourceUrl = configuredUrl ? url(configuredUrl) : "";
-const mobileAnimationUrl = url("/assets/videos/hoshi-banner-mobile-hd.webp");
+const { playerUrl, playerMode = "order" } = Astro.props;
+const sourceUrls = (Array.isArray(playerUrl) ? playerUrl : [playerUrl])
+	.filter(Boolean)
+	.map(url);
+const mobileAnimationUrls = [
+	url("/assets/videos/hoshi-banner-mobile-hd.webp"),
+	url("/assets/videos/hoshi-banner-mobile-2-hd.webp"),
+].slice(0, sourceUrls.length);
+const hasMultiple = sourceUrls.length > 1;
 ---
 
 {
-	sourceUrl && (
+	sourceUrls.length > 0 && (
 		<div
 			id="bg-player-overlay"
 			class="absolute inset-0 z-15 overflow-hidden pointer-events-none select-none"
 			aria-hidden="true"
 		>
-			<picture
-				id="bg-player-mobile-animation"
+			<div
+				id="bg-player-mobile-carousel"
 				class="absolute inset-0 block size-full pointer-events-none select-none md:hidden"
 				aria-hidden="true"
 			>
-				<source
-					srcset={mobileAnimationUrl}
-					type="image/webp"
-					media="(max-width: 767px)"
-				/>
-				<img
-					src="data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///ywAAAAAAQABAAACAUwAOw=="
-					alt=""
-					aria-hidden="true"
-					class="size-full object-cover pointer-events-none select-none"
-					style="filter: brightness(0.78); pointer-events: none; touch-action: none;"
-				/>
-			</picture>
+				{mobileAnimationUrls.map((animationUrl, index) => (
+					<picture
+						class:list={[
+							"mobile-bg-slide absolute inset-0 block size-full transition-opacity duration-1000",
+							index === 0 ? "opacity-100" : "opacity-0",
+						]}
+						data-slide-index={index}
+					>
+						<source
+							srcset={index === 0 ? animationUrl : undefined}
+							data-srcset={animationUrl}
+							type="image/webp"
+							media="(max-width: 767px)"
+						/>
+						<img
+							src="data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///ywAAAAAAQABAAACAUwAOw=="
+							alt=""
+							aria-hidden="true"
+							class="size-full object-cover pointer-events-none select-none"
+							style="filter: brightness(0.78); pointer-events: none; touch-action: none;"
+						/>
+					</picture>
+				))}
+			</div>
+
 			<video
 				id="bg-player-video"
 				autoplay
 				muted
-				loop
+				loop={!hasMultiple}
 				playsinline
 				preload="metadata"
 				disablepictureinpicture
@@ -53,24 +70,77 @@ const mobileAnimationUrl = url("/assets/videos/hoshi-banner-mobile-hd.webp");
 				x-webkit-airplay="deny"
 				webkit-playsinline="true"
 			>
-				<source src={sourceUrl} type="video/mp4" media="(min-width: 768px)" />
+				<source src={sourceUrls[0]} type="video/mp4" media="(min-width: 768px)" />
 			</video>
 		</div>
 	)
 }
 
-<script is:inline>
+<script
+	is:inline
+	define:vars={{
+		desktopUrls: JSON.stringify(sourceUrls),
+		mobileUrls: JSON.stringify(mobileAnimationUrls),
+		playerMode,
+	}}
+>
 	(() => {
+		var desktopList = JSON.parse(desktopUrls);
+		var mobileList = JSON.parse(mobileUrls);
+		var isMobile = window.matchMedia("(max-width: 767px)").matches;
+
+		function nextIndex(current, length) {
+			if (length <= 1) return 0;
+			if (playerMode === "random") {
+				var next;
+				do { next = Math.floor(Math.random() * length); } while (next === current);
+				return next;
+			}
+			return (current + 1) % length;
+		}
+
+		if (isMobile) {
+			var carousel = document.getElementById("bg-player-mobile-carousel");
+			if (!carousel || carousel.getAttribute("data-carousel-init")) return;
+			carousel.setAttribute("data-carousel-init", "true");
+			var slides = Array.from(carousel.querySelectorAll(".mobile-bg-slide"));
+			var currentSlide = 0;
+
+			function loadSlide(index) {
+				var source = slides[index] && slides[index].querySelector("source");
+				if (source && !source.getAttribute("srcset")) {
+					source.setAttribute("srcset", source.getAttribute("data-srcset") || "");
+				}
+			}
+
+			if (slides.length > 1) {
+				setTimeout(function () { loadSlide(nextIndex(currentSlide, slides.length)); }, 2000);
+				var oldTimer = Reflect.get(window, "__hoshiMobileCarouselTimer");
+				if (oldTimer) clearInterval(oldTimer);
+				var timer = setInterval(function () {
+					var next = nextIndex(currentSlide, slides.length);
+					loadSlide(next);
+					slides[currentSlide].classList.remove("opacity-100");
+					slides[currentSlide].classList.add("opacity-0");
+					slides[next].classList.remove("opacity-0");
+					slides[next].classList.add("opacity-100");
+					currentSlide = next;
+				}, 20400);
+				Reflect.set(window, "__hoshiMobileCarouselTimer", timer);
+			}
+			return;
+		}
+
 		var video = document.getElementById("bg-player-video");
-		if (window.matchMedia("(max-width: 767px)").matches) return;
-		if (!video || video.getAttribute("data-background-video-init")) return;
+		if (!video || !desktopList.length || video.getAttribute("data-background-video-init")) return;
 		video.setAttribute("data-background-video-init", "true");
+		var currentVideo = 0;
 
 		function enforceBackgroundMode() {
 			video.muted = true;
 			video.defaultMuted = true;
 			video.autoplay = true;
-			video.loop = true;
+			video.loop = desktopList.length === 1;
 			video.playsInline = true;
 			video.controls = false;
 			video.removeAttribute("controls");
@@ -78,16 +148,30 @@ const mobileAnimationUrl = url("/assets/videos/hoshi-banner-mobile-hd.webp");
 			video.setAttribute("webkit-playsinline", "true");
 			var playPromise = video.play();
 			if (playPromise && typeof playPromise.catch === "function") {
-				playPromise.catch(function () {
-					// iOS may defer muted autoplay until the page becomes visible.
-				});
+				playPromise.catch(function () {});
 			}
+		}
+
+		function preloadVideo(index) {
+			if (desktopList.length <= 1) return;
+			fetch(desktopList[index], { cache: "force-cache" }).catch(function () {});
+		}
+
+		function switchVideo() {
+			currentVideo = nextIndex(currentVideo, desktopList.length);
+			video.src = desktopList[currentVideo];
+			video.load();
+			enforceBackgroundMode();
+			setTimeout(function () {
+				preloadVideo(nextIndex(currentVideo, desktopList.length));
+			}, 2000);
 		}
 
 		video.addEventListener("loadeddata", enforceBackgroundMode);
 		video.addEventListener("canplay", enforceBackgroundMode);
+		video.addEventListener("ended", switchVideo);
 		video.addEventListener("pause", function () {
-			if (!document.hidden) enforceBackgroundMode();
+			if (!document.hidden && !video.ended) setTimeout(enforceBackgroundMode, 100);
 		});
 		window.addEventListener("pageshow", enforceBackgroundMode);
 		window.addEventListener("focus", enforceBackgroundMode);
@@ -95,6 +179,9 @@ const mobileAnimationUrl = url("/assets/videos/hoshi-banner-mobile-hd.webp");
 			if (!document.hidden) enforceBackgroundMode();
 		});
 
+		setTimeout(function () {
+			preloadVideo(nextIndex(currentVideo, desktopList.length));
+		}, 2000);
 		enforceBackgroundMode();
 	})();
 </script>
