@@ -86,16 +86,36 @@ const posterAvatarSelector = profileConfig.avatar
 
 dayjs.extend(utc);
 
+const structuredDataBaseUrl = Astro.site ?? Astro.url;
+const postCanonicalUrl = new URL(
+	getPostUrlBySlug(entry.id),
+	structuredDataBaseUrl,
+).toString();
+const authorProfileUrl = new URL(
+	url("/about/"),
+	structuredDataBaseUrl,
+).toString();
+const structuredDataImageUrl = new URL(
+	url("/assets/images/social-preview.jpg"),
+	structuredDataBaseUrl,
+).toString();
+
 const jsonLd = {
 	"@context": "https://schema.org",
 	"@type": "BlogPosting",
 	headline: entry.data.title,
 	description: entry.data.description || entry.data.title,
+	url: postCanonicalUrl,
+	mainEntityOfPage: {
+		"@type": "WebPage",
+		"@id": postCanonicalUrl,
+	},
+	image: structuredDataImageUrl,
 	keywords: entry.data.tags,
 	author: {
 		"@type": "Person",
 		name: profileConfig.name,
-		url: Astro.site,
+		url: authorProfileUrl,
 	},
 	datePublished: formatDateToYYYYMMDD(entry.data.published),
 	inLanguage: entry.data.lang

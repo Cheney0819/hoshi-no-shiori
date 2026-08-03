@@ -233,26 +233,31 @@ export default defineConfig({
 			filter: (page) => {
 				// 根据页面开关配置过滤sitemap
 				const url = new URL(page);
-				const pathname = url.pathname;
-				if (pathname === "/dynamic/" && !siteConfig.pages.dynamic) {
-					return false;
+				let pathname = url.pathname;
+				const configuredBase = (process.env.BASE_PATH || "/").replace(/\/$/, "");
+				if (
+					configuredBase &&
+					configuredBase !== "/" &&
+					pathname.startsWith(configuredBase)
+				) {
+					pathname = pathname.slice(configuredBase.length) || "/";
 				}
-				if (pathname === "/friends/" && !siteConfig.pages.friends) {
-					return false;
-				}
-				if (pathname === "/sponsor/" && !siteConfig.pages.sponsor) {
-					return false;
-				}
-				if (pathname === "/guestbook/" && !siteConfig.pages.guestbook) {
-					return false;
-				}
-				if (pathname === "/bangumi/" && !siteConfig.pages.bangumi) {
-					return false;
-				}
-				if (pathname === "/gallery/" && !siteConfig.pages.gallery) {
-					return false;
-				}
-				if (pathname === "/anime/" && !siteConfig.pages.anime) {
+
+				const disabledPagePrefixes = [
+					["/dynamic/", !siteConfig.pages.dynamic],
+					["/friends/", !siteConfig.pages.friends],
+					["/sponsor/", !siteConfig.pages.sponsor],
+					["/guestbook/", !siteConfig.pages.guestbook],
+					["/bangumi/", !siteConfig.pages.bangumi],
+					["/gallery/", !siteConfig.pages.gallery],
+					["/anime/", !siteConfig.pages.anime],
+				];
+
+				if (
+					disabledPagePrefixes.some(
+						([prefix, disabled]) => disabled && pathname.startsWith(prefix),
+					)
+				) {
 					return false;
 				}
 
