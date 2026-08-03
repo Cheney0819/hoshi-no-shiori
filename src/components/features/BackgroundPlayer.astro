@@ -62,7 +62,7 @@ const hasMultiple = sourceUrls.length > 1;
 						data-slide-index={index}
 						data-kind={media.kind}
 						data-duration={media.duration}
-						style={`opacity: ${index === 0 ? 1 : 0};`}
+						style={`display: ${index === 0 ? "block" : "none"}; opacity: 1;`}
 					>
 						{media.kind === "image" ? (
 							<picture class="block size-full">
@@ -81,23 +81,32 @@ const hasMultiple = sourceUrls.length > 1;
 								/>
 							</picture>
 						) : (
-							<video
-								muted
-								loop
-								playsinline
-								preload="metadata"
-								poster={media.poster}
-								disablepictureinpicture
-								disableRemotePlayback
-								tabindex="-1"
-								aria-hidden="true"
-								class="mobile-bg-video size-full object-cover pointer-events-none select-none"
-								style="filter: brightness(0.78); pointer-events: none; touch-action: none; user-select: none; -webkit-user-select: none; -webkit-touch-callout: none;"
-								x-webkit-airplay="deny"
-								webkit-playsinline="true"
-							>
-								<source data-src={media.url} type="video/mp4" />
-							</video>
+							<div class="relative size-full">
+								<img
+									src={media.poster}
+									alt=""
+									aria-hidden="true"
+									class="absolute inset-0 size-full object-cover pointer-events-none select-none"
+									style="filter: brightness(0.78); pointer-events: none; touch-action: none;"
+								/>
+								<video
+									muted
+									loop
+									playsinline
+									preload="metadata"
+									poster={media.poster}
+									disablepictureinpicture
+									disableRemotePlayback
+									tabindex="-1"
+									aria-hidden="true"
+									class="mobile-bg-video absolute inset-0 size-full object-cover pointer-events-none select-none"
+									style="filter: brightness(0.78); pointer-events: none; touch-action: none; user-select: none; -webkit-user-select: none; -webkit-touch-callout: none;"
+									x-webkit-airplay="deny"
+									webkit-playsinline="true"
+								>
+									<source data-src={media.url} type="video/mp4" />
+								</video>
+							</div>
 						)}
 					</div>
 				))}
@@ -201,7 +210,8 @@ const hasMultiple = sourceUrls.length > 1;
 					var next = nextIndex(currentSlide, slides.length);
 					loadSlide(next);
 					stopSlideVideo(currentSlide);
-					slides[currentSlide].style.opacity = "0";
+					slides[currentSlide].style.display = "none";
+					slides[next].style.display = "block";
 					slides[next].style.opacity = "1";
 					currentSlide = next;
 					playSlideVideo(currentSlide);
