@@ -9,7 +9,7 @@ export interface Props {
 const { playerUrl } = Astro.props;
 const configuredUrl = Array.isArray(playerUrl) ? playerUrl[0] : playerUrl;
 const sourceUrl = configuredUrl ? url(configuredUrl) : "";
-const mobileAnimationUrl = url("/assets/videos/hoshi-banner-mobile.webp");
+const mobileAnimationUrl = url("/assets/videos/hoshi-banner-mobile-hd.webp");
 ---
 
 {
