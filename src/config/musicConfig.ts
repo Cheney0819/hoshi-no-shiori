@@ -18,10 +18,10 @@ export const musicPlayerConfig: MusicPlayerConfig = {
 	autoPlay: true,
 
 	// 播放模式：'list'=列表循环, 'one'=单曲循环, 'random'=随机播放
-	playMode: "one",
+	playMode: "list",
 
 	// 是否显启用歌词
-	showLyrics: false,
+	showLyrics: true,
 
 	// Meting API 配置
 	meting: {
@@ -50,6 +50,13 @@ export const musicPlayerConfig: MusicPlayerConfig = {
 	// lrc: "[00:00.00]歌词内容...",
 	local: {
 		playlist: [
+			{
+				name: "Against the Tide（逆潮）",
+				artist: "鸣潮先约电台 / Forts / Obadiah Brown-Beach",
+				url: "/assets/music/against-the-tide.mp3",
+				cover: "/favicon/aster-512.png",
+				lrc: "/assets/music/lrc/against-the-tide.lrc",
+			},
 			{
 				name: "小小奇迹",
 				artist: "鸣潮先约电台 / jixwang / 飞行雪绒",

@@ -65,7 +65,7 @@ const managerConfigStr = JSON.stringify({
 >
 	<div class="flex-1 min-w-0">
 		<div class="font-bold text-sm">🎵 开启背景音乐</div>
-		<div class="text-xs text-neutral-500 dark:text-neutral-400 truncate">小小奇迹 · 点击后将在网页内循环播放</div>
+		<div class="text-xs text-neutral-500 dark:text-neutral-400 truncate">{localPlaylist[0]?.name ?? "背景音乐"} · 点击后将在网页内列表循环播放</div>
 	</div>
 	<button id="music-autoplay-enable" class="btn-regular shrink-0 rounded-lg px-3 py-2 text-sm font-bold">播放</button>
 	<button id="music-autoplay-dismiss" class="shrink-0 rounded-lg px-2 py-2 text-neutral-400 hover:text-neutral-700 dark:hover:text-neutral-100" aria-label="暂不播放">✕</button>
