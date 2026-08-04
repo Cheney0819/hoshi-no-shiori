@@ -12,33 +12,34 @@ const sourceUrls = (Array.isArray(playerUrl) ? playerUrl : [playerUrl])
 	.map(url);
 const mobileMedia = [
 	{
-		url: url("/assets/videos/hoshi-banner-mobile-hq.webp"),
-		kind: "image",
+		url: sourceUrls[0] ?? "",
+		kind: "video",
 		duration: 20583,
-		poster: "",
+		poster: url("/assets/videos/hoshi-banner-poster-1.webp"),
 	},
 	{
-		url: url("/assets/videos/hoshi-banner-mobile-2-hq.webp"),
-		kind: "image",
+		url: sourceUrls[1] ?? "",
+		kind: "video",
 		duration: 20367,
-		poster: "",
+		poster: url("/assets/videos/hoshi-banner-poster-2.webp"),
 	},
 	{
 		url: sourceUrls[2] ?? "",
 		kind: "video",
 		duration: 4400,
-		poster: url("/assets/videos/hoshi-banner-mobile-3-poster.png"),
+		poster: url("/assets/videos/hoshi-banner-poster-3.webp"),
 	},
 	{
 		url: sourceUrls[3] ?? "",
 		kind: "video",
 		duration: 5500,
-		poster: url("/assets/videos/hoshi-banner-mobile-4-poster.png"),
+		poster: url("/assets/videos/hoshi-banner-poster-4.webp"),
 	},
 ]
 	.filter((item) => item.url)
 	.slice(0, sourceUrls.length);
 const hasMultiple = sourceUrls.length > 1;
+const posterUrls = mobileMedia.map((item) => item.poster);
 ---
 
 {
@@ -119,6 +120,7 @@ const hasMultiple = sourceUrls.length > 1;
 				loop={!hasMultiple}
 				playsinline
 				preload="metadata"
+				poster={posterUrls[0]}
 				disablepictureinpicture
 				disableRemotePlayback
 				tabindex="-1"
@@ -138,11 +140,13 @@ const hasMultiple = sourceUrls.length > 1;
 	is:inline
 	define:vars={{
 		desktopUrls: JSON.stringify(sourceUrls),
+		desktopPosters: JSON.stringify(posterUrls),
 		playerMode,
 	}}
 >
 	(() => {
 		var desktopList = JSON.parse(desktopUrls);
+		var posterList = JSON.parse(desktopPosters);
 		var isMobile = window.matchMedia("(max-width: 767px)").matches;
 
 		function nextIndex(current, length) {
@@ -215,9 +219,6 @@ const hasMultiple = sourceUrls.length > 1;
 					slides[next].style.opacity = "1";
 					currentSlide = next;
 					playSlideVideo(currentSlide);
-					setTimeout(function () {
-						loadSlide(nextIndex(currentSlide, slides.length));
-					}, 1000);
 					scheduleNext();
 				}, duration);
 				Reflect.set(window, "__hoshiMobileCarouselTimer", timer);
@@ -226,9 +227,14 @@ const hasMultiple = sourceUrls.length > 1;
 			var oldTimer = Reflect.get(window, "__hoshiMobileCarouselTimer");
 			if (oldTimer) clearTimeout(oldTimer);
 			loadSlide(0);
-			setTimeout(function () {
-				loadSlide(nextIndex(currentSlide, slides.length));
-			}, 2000);
+			playSlideVideo(0);
+			function unlockMobileVideo() {
+				playSlideVideo(currentSlide);
+				document.removeEventListener("pointerdown", unlockMobileVideo, true);
+				document.removeEventListener("touchend", unlockMobileVideo, true);
+			}
+			document.addEventListener("pointerdown", unlockMobileVideo, true);
+			document.addEventListener("touchend", unlockMobileVideo, true);
 			scheduleNext();
 			return;
 		}
@@ -254,19 +260,12 @@ const hasMultiple = sourceUrls.length > 1;
 			}
 		}
 
-		function preloadVideo(index) {
-			if (desktopList.length <= 1) return;
-			fetch(desktopList[index], { cache: "force-cache" }).catch(function () {});
-		}
-
 		function switchVideo() {
 			currentVideo = nextIndex(currentVideo, desktopList.length);
+			video.poster = posterList[currentVideo] || "";
 			video.src = desktopList[currentVideo];
 			video.load();
 			enforceBackgroundMode();
-			setTimeout(function () {
-				preloadVideo(nextIndex(currentVideo, desktopList.length));
-			}, 2000);
 		}
 
 		video.addEventListener("loadeddata", enforceBackgroundMode);
@@ -281,9 +280,6 @@ const hasMultiple = sourceUrls.length > 1;
 			if (!document.hidden) enforceBackgroundMode();
 		});
 
-		setTimeout(function () {
-			preloadVideo(nextIndex(currentVideo, desktopList.length));
-		}, 2000);
 		enforceBackgroundMode();
 	})();
 </script>
